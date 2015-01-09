@@ -15,6 +15,8 @@ namespace AppleExport
         {
             if (a == null)
                 return "";
+            a = a.Replace("\r", "");
+            a = a.Replace("\n", "\t");
             if (a.Contains(","))
                 return "\"" + a + "\"";
             return a;
@@ -38,14 +40,41 @@ namespace AppleExport
             public string lastname;
             public string organization;
             public string note;
+            public bool definite;
         }
 
 
+        static Dictionary<string, string> guidmap = new Dictionary<string, string>();
+        static Dictionary<string, Person> personmap = new Dictionary<string, Person>();
+
+        static Person getPersonFromTel(string tel)
+        {
+            Person p = new Person();
+            p.definite = true;
+            string address = tel;
+            address = Regex.Replace(address, @"\s+", "");
+            string uid = null;
+            if (address != "" && address != null)
+            {
+                if (guidmap.ContainsKey(address))
+                    uid = guidmap[address];
+                else
+                {
+                    if (address.Length >= 7)
+                    {
+                        uid = guidmap.FirstOrDefault(t => { return t.Key.Length >= 7 && t.Key.Substring(t.Key.Length - 7).CompareTo(address.Substring(address.Length - 7)) == 0; }).Value;
+                        if (uid != null)
+                            p.definite = false;
+                    }
+                }
+                if (uid != null && personmap.ContainsKey(uid))
+                    p = personmap[uid];
+            }
+            return p;
+        }
 
         static void Main(string[] args)
         {
-            Dictionary<string, string> guidmap = new Dictionary<string, string>();
-            Dictionary<string, Person> personmap = new Dictionary<string, Person>();
             string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Apple Computer\MobileSync\Backup\";
             DirectoryInfo di = new DirectoryInfo(path);
             DirectoryInfo max = null;
@@ -102,34 +131,15 @@ namespace AppleExport
                 m_dbConnection.Open();
                 string sql = "select ZADDRESS, ZDATE, ZDURATION, ZORIGINATED from ZCALLRECORD";
                 SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
-                using (StreamWriter sw = new StreamWriter("out.csv", false, Encoding.UTF8))
+                using (StreamWriter sw = new StreamWriter("call.csv", false, Encoding.UTF8))
                 {
                     sw.WriteLine("Address,LastName,FirstName,Date,Duration,Direction,Definite");
                     using (SQLiteDataReader reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            Person p = new Person();
-                            bool definite = true;
                             string address = reader["ZADDRESS"].ToString();
-                            address = Regex.Replace(address, @"\s+", "");
-                            string uid = null;
-                            if (address != "" && address != null)
-                            {
-                                if (guidmap.ContainsKey(address))
-                                    uid = guidmap[address];
-                                else
-                                {
-                                    if (address.Length >= 7)
-                                    {
-                                        uid = guidmap.FirstOrDefault(t => { return t.Key.Length >= 7 && t.Key.Substring(t.Key.Length - 7).CompareTo(address.Substring(address.Length - 7)) == 0; }).Value;
-                                        if (uid != null)
-                                            definite = false;
-                                    }
-                                }
-                                if (uid != null && personmap.ContainsKey(uid))
-                                    p = personmap[uid];
-                            }
+                            Person p = getPersonFromTel(address);
                             //Console.WriteLine("Address: {0}\tDate: {1}\tDuration: {2}\tOrigin {3}\tName: {4} {5} \tOrganization: {6} \tDefinite: {7}", address, UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"), reader["ZDURATION"], reader["ZORIGINATED"], p.firstname, p.lastname, p.organization, definite);
                             sw.WriteLine("{0},{1},{2},{3},{4},{5},{6}", address.csv(),
                                 p.lastname.csv(),
@@ -137,7 +147,34 @@ namespace AppleExport
                                 UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"),
                                 reader["ZDURATION"].ToString(),
                                 reader["ZORIGINATED"].ToString() == "1" ? "OUT" : "IN",
-                                definite);
+                                p.definite);
+                        }
+                    }
+                }
+            }
+            using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + max.FullName + @"\3d0d7e5fb2ce288813306e4d4636395e047a3d28"))
+            {
+                m_dbConnection.Open();
+                string sql = "select text, date, chat_identifier, service_name, is_from_me from chat join chat_message_join on chat.ROWID=chat_message_join.chat_id join message on message.ROWID=chat_message_join.message_id";
+                SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
+                using (StreamWriter sw = new StreamWriter("sms.csv", false, Encoding.UTF8))
+                {
+                    sw.WriteLine("Address,LastName,FirstName,Date,Message,Direction,Service,Definite");
+                    using (SQLiteDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string address = reader["chat_identifier"].ToString();
+                            Person p = getPersonFromTel(address);
+                            //Console.WriteLine("Address: {0}\tDate: {1}\tDuration: {2}\tOrigin {3}\tName: {4} {5} \tOrganization: {6} \tDefinite: {7}", address, UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"), reader["ZDURATION"], reader["ZORIGINATED"], p.firstname, p.lastname, p.organization, definite);
+                            sw.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7}", address.csv(),
+                                p.lastname.csv(),
+                                p.firstname.csv(),
+                                UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"),
+                                reader["text"].ToString().csv(),
+                                reader["is_from_me"].ToString() == "1" ? "OUT" : "IN",
+                                reader["service_name"].ToString().csv(),
+                                p.definite);
                         }
                     }
                 }
