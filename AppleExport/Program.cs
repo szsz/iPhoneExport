@@ -166,8 +166,7 @@ namespace AppleExport
                         {
                             string address = reader["chat_identifier"].ToString();
                             Person p = getPersonFromTel(address);
-                            //Console.WriteLine("Address: {0}\tDate: {1}\tDuration: {2}\tOrigin {3}\tName: {4} {5} \tOrganization: {6} \tDefinite: {7}", address, UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"), reader["ZDURATION"], reader["ZORIGINATED"], p.firstname, p.lastname, p.organization, definite);
-                            sw.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7}", address.csv(),
+                             sw.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7}", address.csv(),
                                 p.lastname.csv(),
                                 p.firstname.csv(),
                                 UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"),
