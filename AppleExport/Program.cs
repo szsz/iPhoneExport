@@ -80,12 +80,12 @@ namespace AppleExport
             DirectoryInfo max = null;
             foreach (var item in di.EnumerateDirectories())
             {
-                if(max == null || max.LastWriteTime > item.LastWriteTime)
+                if (max == null || max.LastWriteTime > item.LastWriteTime)
                 {
                     max = item;
                 }
             }
-            using (var m_dbConnection = new SQLiteConnection(@"Data Source="+max.FullName+@"\31bb7ba8914766d4ba40d6dfb6113c8b614be442"))
+            using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + max.FullName + @"\31bb7ba8914766d4ba40d6dfb6113c8b614be442"))
             {
                 m_dbConnection.Open();
                 {
@@ -126,57 +126,111 @@ namespace AppleExport
                     }
                 }
             }
-            using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + max.FullName + @"\5a4935c78a5255723f707230a451d79c540d2741"))
+            try
             {
-                m_dbConnection.Open();
-                string sql = "select ZADDRESS, ZDATE, ZDURATION, ZORIGINATED from ZCALLRECORD";
-                SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
-                using (StreamWriter sw = new StreamWriter("call.csv", false, Encoding.UTF8))
+                using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + max.FullName + @"\5a4935c78a5255723f707230a451d79c540d2741"))
                 {
-                    sw.WriteLine("Address,LastName,FirstName,Date,Duration,Direction,Definite");
-                    using (SQLiteDataReader reader = command.ExecuteReader())
+                    m_dbConnection.Open();
+                    string sql = "select ZADDRESS, ZDATE, ZDURATION, ZORIGINATED from ZCALLRECORD";
+                    SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
+                    using (StreamWriter sw = new StreamWriter("call.csv", false, Encoding.UTF8))
                     {
-                        while (reader.Read())
+                        sw.WriteLine("Address,LastName,FirstName,Date,Duration,Direction,Definite");
+                        using (SQLiteDataReader reader = command.ExecuteReader())
                         {
-                            string address = reader["ZADDRESS"].ToString();
-                            Person p = getPersonFromTel(address);
-                            //Console.WriteLine("Address: {0}\tDate: {1}\tDuration: {2}\tOrigin {3}\tName: {4} {5} \tOrganization: {6} \tDefinite: {7}", address, UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"), reader["ZDURATION"], reader["ZORIGINATED"], p.firstname, p.lastname, p.organization, definite);
-                            sw.WriteLine("{0},{1},{2},{3},{4},{5},{6}", address.csv(),
-                                p.lastname.csv(),
-                                p.firstname.csv(),
-                                UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"),
-                                reader["ZDURATION"].ToString(),
-                                reader["ZORIGINATED"].ToString() == "1" ? "OUT" : "IN",
-                                p.definite);
+                            while (reader.Read())
+                            {
+                                string address = reader["ZADDRESS"].ToString();
+                                Person p = getPersonFromTel(address);
+                                //Console.WriteLine("Address: {0}\tDate: {1}\tDuration: {2}\tOrigin {3}\tName: {4} {5} \tOrganization: {6} \tDefinite: {7}", address, UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"), reader["ZDURATION"], reader["ZORIGINATED"], p.firstname, p.lastname, p.organization, definite);
+                                sw.WriteLine("{0},{1},{2},{3},{4},{5},{6}", address.csv(),
+                                    p.lastname.csv(),
+                                    p.firstname.csv(),
+                                    UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"),
+                                    reader["ZDURATION"].ToString(),
+                                    reader["ZORIGINATED"].ToString() == "1" ? "OUT" : "IN",
+                                    p.definite);
+                            }
                         }
                     }
                 }
             }
-            using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + max.FullName + @"\3d0d7e5fb2ce288813306e4d4636395e047a3d28"))
+            catch (Exception e)
             {
-                m_dbConnection.Open();
-                string sql = "select text, date, chat_identifier, service_name, is_from_me from chat join chat_message_join on chat.ROWID=chat_message_join.chat_id join message on message.ROWID=chat_message_join.message_id";
-                SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
-                using (StreamWriter sw = new StreamWriter("sms.csv", false, Encoding.UTF8))
+                Console.WriteLine(e.Message);
+                if (e.InnerException != null)
+                    Console.WriteLine(e.InnerException);
+            }
+
+            try
+            {
+                using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + max.FullName + @"\2b2b0084a1bc3a5ac8c27afdf14afb42c61a19ca"))
                 {
-                    sw.WriteLine("Address,LastName,FirstName,Date,Message,Direction,Service,Definite");
-                    using (SQLiteDataReader reader = command.ExecuteReader())
+                    m_dbConnection.Open();
+                    string sql = "select ADDRESS, DATE, DURATION from CALL";
+                    SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
+                    using (StreamWriter sw = new StreamWriter("callsort.csv", false, Encoding.UTF8))
                     {
-                        while (reader.Read())
+                        sw.WriteLine("Address,LastName,FirstName,Date,Duration,Definite");
+                        using (SQLiteDataReader reader = command.ExecuteReader())
                         {
-                            string address = reader["chat_identifier"].ToString();
-                            Person p = getPersonFromTel(address);
-                             sw.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7}", address.csv(),
-                                p.lastname.csv(),
-                                p.firstname.csv(),
-                                UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"),
-                                reader["text"].ToString().csv(),
-                                reader["is_from_me"].ToString() == "1" ? "OUT" : "IN",
-                                reader["service_name"].ToString().csv(),
-                                p.definite);
+                            while (reader.Read())
+                            {
+                                string address = reader["ADDRESS"].ToString();
+                                Person p = getPersonFromTel(address);
+                                //Console.WriteLine("Address: {0}\tDate: {1}\tDuration: {2}\tOrigin {3}\tName: {4} {5} \tOrganization: {6} \tDefinite: {7}", address, UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"), reader["ZDURATION"], reader["ZORIGINATED"], p.firstname, p.lastname, p.organization, definite);
+                                sw.WriteLine("{0},{1},{2},{3},{4},{5}", address.csv(),
+                                    p.lastname.csv(),
+                                    p.firstname.csv(),
+                                    UnixTimeStampToDateTime(reader.GetDouble(1) ).ToString("yyyy-MM-dd HH:mm:ss"),
+                                    reader["DURATION"].ToString(),
+                                    p.definite);
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                if (e.InnerException != null)
+                    Console.WriteLine(e.InnerException);
+            } 
+            
+            try
+            {
+                using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + max.FullName + @"\3d0d7e5fb2ce288813306e4d4636395e047a3d28"))
+                {
+                    m_dbConnection.Open();
+                    string sql = "select text, date, chat_identifier, service_name, is_from_me from chat join chat_message_join on chat.ROWID=chat_message_join.chat_id join message on message.ROWID=chat_message_join.message_id";
+                    SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
+                    using (StreamWriter sw = new StreamWriter("sms.csv", false, Encoding.UTF8))
+                    {
+                        sw.WriteLine("Address,LastName,FirstName,Date,Message,Direction,Service,Definite");
+                        using (SQLiteDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                string address = reader["chat_identifier"].ToString();
+                                Person p = getPersonFromTel(address);
+                                sw.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7}", address.csv(),
+                                   p.lastname.csv(),
+                                   p.firstname.csv(),
+                                   UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"),
+                                   reader["text"].ToString().csv(),
+                                   reader["is_from_me"].ToString() == "1" ? "OUT" : "IN",
+                                   reader["service_name"].ToString().csv(),
+                                   p.definite);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                if (e.InnerException != null)
+                    Console.WriteLine(e.InnerException);
             }
         }
     }
