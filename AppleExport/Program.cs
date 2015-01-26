@@ -47,6 +47,11 @@ namespace AppleExport
         static Dictionary<string, string> guidmap = new Dictionary<string, string>();
         static Dictionary<string, Person> personmap = new Dictionary<string, Person>();
 
+        public static string sectotime(int t)
+        {
+            return string.Format("{0}:{1}:{2}", t / 3600, (t / 60) % 60, t % 60);
+        }
+
         static Person getPersonFromTel(string tel)
         {
             Person p = new Person();
@@ -73,18 +78,11 @@ namespace AppleExport
             return p;
         }
 
-        static void Main(string[] args)
+
+        static void export(DirectoryInfo max)
         {
-            string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Apple Computer\MobileSync\Backup\";
-            DirectoryInfo di = new DirectoryInfo(path);
-            DirectoryInfo max = null;
-            foreach (var item in di.EnumerateDirectories())
-            {
-                if (max == null || max.LastWriteTime > item.LastWriteTime)
-                {
-                    max = item;
-                }
-            }
+            DateTime now = DateTime.Now;
+            string pref = max.Name + "_" + now.ToString("yyyy-MM-dd HH.mm.ss");
             using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + max.FullName + @"\31bb7ba8914766d4ba40d6dfb6113c8b614be442"))
             {
                 m_dbConnection.Open();
@@ -133,9 +131,9 @@ namespace AppleExport
                     m_dbConnection.Open();
                     string sql = "select ZADDRESS, ZDATE, ZDURATION, ZORIGINATED from ZCALLRECORD";
                     SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
-                    using (StreamWriter sw = new StreamWriter("call.csv", false, Encoding.UTF8))
+                    using (StreamWriter sw = new StreamWriter(pref +  "_call.csv", false, Encoding.UTF8))
                     {
-                        sw.WriteLine("Address,LastName,FirstName,Date,Duration,Direction,Definite");
+                        sw.WriteLine("Direction,Date,Duration,Address,LastName,FirstName");
                         using (SQLiteDataReader reader = command.ExecuteReader())
                         {
                             while (reader.Read())
@@ -143,13 +141,13 @@ namespace AppleExport
                                 string address = reader["ZADDRESS"].ToString();
                                 Person p = getPersonFromTel(address);
                                 //Console.WriteLine("Address: {0}\tDate: {1}\tDuration: {2}\tOrigin {3}\tName: {4} {5} \tOrganization: {6} \tDefinite: {7}", address, UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"), reader["ZDURATION"], reader["ZORIGINATED"], p.firstname, p.lastname, p.organization, definite);
-                                sw.WriteLine("{0},{1},{2},{3},{4},{5},{6}", address.csv(),
-                                    p.lastname.csv(),
-                                    p.firstname.csv(),
+                                sw.WriteLine("{0},{1},{2},{3},{4},{5}",
+                                    reader["ZORIGINATED"].ToString() == "1" ? "Outgoing" : "Incoming",
                                     UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"),
-                                    reader["ZDURATION"].ToString(),
-                                    reader["ZORIGINATED"].ToString() == "1" ? "OUT" : "IN",
-                                    p.definite);
+                                    sectotime(int.Parse(reader["ZDURATION"].ToString())),
+                                    address.csv(),
+                                    p.lastname.csv(),
+                                    p.firstname.csv());
                             }
                         }
                     }
@@ -169,9 +167,9 @@ namespace AppleExport
                     m_dbConnection.Open();
                     string sql = "select ADDRESS, DATE, DURATION from CALL";
                     SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
-                    using (StreamWriter sw = new StreamWriter("callsort.csv", false, Encoding.UTF8))
+                    using (StreamWriter sw = new StreamWriter(pref+ "_callsort.csv", false, Encoding.UTF8))
                     {
-                        sw.WriteLine("Address,LastName,FirstName,Date,Duration,Definite");
+                        sw.WriteLine("Date,Duration,Address,LastName,FirstName");
                         using (SQLiteDataReader reader = command.ExecuteReader())
                         {
                             while (reader.Read())
@@ -179,12 +177,12 @@ namespace AppleExport
                                 string address = reader["ADDRESS"].ToString();
                                 Person p = getPersonFromTel(address);
                                 //Console.WriteLine("Address: {0}\tDate: {1}\tDuration: {2}\tOrigin {3}\tName: {4} {5} \tOrganization: {6} \tDefinite: {7}", address, UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"), reader["ZDURATION"], reader["ZORIGINATED"], p.firstname, p.lastname, p.organization, definite);
-                                sw.WriteLine("{0},{1},{2},{3},{4},{5}", address.csv(),
+                                sw.WriteLine("{0},{1},{2},{3},{4}",
+                                    UnixTimeStampToDateTime(reader.GetDouble(1)).ToString("yyyy-MM-dd HH:mm:ss"),
+                                    sectotime(int.Parse(reader["DURATION"].ToString())),
+                                    address.csv(),
                                     p.lastname.csv(),
-                                    p.firstname.csv(),
-                                    UnixTimeStampToDateTime(reader.GetDouble(1) ).ToString("yyyy-MM-dd HH:mm:ss"),
-                                    reader["DURATION"].ToString(),
-                                    p.definite);
+                                    p.firstname.csv());
                             }
                         }
                     }
@@ -195,8 +193,8 @@ namespace AppleExport
                 Console.WriteLine(e.Message);
                 if (e.InnerException != null)
                     Console.WriteLine(e.InnerException);
-            } 
-            
+            }
+
             try
             {
                 using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + max.FullName + @"\3d0d7e5fb2ce288813306e4d4636395e047a3d28"))
@@ -204,23 +202,23 @@ namespace AppleExport
                     m_dbConnection.Open();
                     string sql = "select text, date, chat_identifier, service_name, is_from_me from chat join chat_message_join on chat.ROWID=chat_message_join.chat_id join message on message.ROWID=chat_message_join.message_id";
                     SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
-                    using (StreamWriter sw = new StreamWriter("sms.csv", false, Encoding.UTF8))
+                    using (StreamWriter sw = new StreamWriter(pref + "_sms.csv", false, Encoding.UTF8))
                     {
-                        sw.WriteLine("Address,LastName,FirstName,Date,Message,Direction,Service,Definite");
+                        sw.WriteLine("Direction,Date,Message,Address,LastName,FirstName,Service");
                         using (SQLiteDataReader reader = command.ExecuteReader())
                         {
                             while (reader.Read())
                             {
                                 string address = reader["chat_identifier"].ToString();
                                 Person p = getPersonFromTel(address);
-                                sw.WriteLine("{0},{1},{2},{3},{4},{5},{6},{7}", address.csv(),
-                                   p.lastname.csv(),
-                                   p.firstname.csv(),
+                                sw.WriteLine("{0},{1},{2},{3},{4},{5},{6}", 
+                                   reader["is_from_me"].ToString() == "1" ? "Outgoing" : "Incoming",
                                    UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"),
                                    reader["text"].ToString().csv(),
-                                   reader["is_from_me"].ToString() == "1" ? "OUT" : "IN",
-                                   reader["service_name"].ToString().csv(),
-                                   p.definite);
+                                   address.csv(),
+                                   p.lastname.csv(),
+                                   p.firstname.csv(),
+                                   reader["service_name"].ToString().csv());
                             }
                         }
                     }
@@ -231,6 +229,25 @@ namespace AppleExport
                 Console.WriteLine(e.Message);
                 if (e.InnerException != null)
                     Console.WriteLine(e.InnerException);
+            }
+        }
+
+        static void Main(string[] args)
+        {
+            string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\Apple Computer\MobileSync\Backup\";
+            DirectoryInfo di = new DirectoryInfo(path);
+            foreach (var max in di.EnumerateDirectories())
+            {
+                try
+                {
+                    export(max);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+
+
             }
         }
     }
