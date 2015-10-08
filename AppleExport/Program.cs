@@ -39,6 +39,8 @@ namespace AppleExport
 
         public static string TelNumberify(this string s)
         {
+            if (s.Contains("@")) // if address is an email then do not format
+                return s;
             StringBuilder t = new StringBuilder();
             foreach (var item in s)
             {
