@@ -22,9 +22,9 @@ namespace AppleExport
             return a;
         }
 
-        public static string stringify(this object a)
+        public static string Stringify(this object a)
         {
-            if(a is byte[])
+            if (a is byte[])
             {
                 byte[] x = (byte[])a;
                 StringBuilder t = new StringBuilder();
@@ -36,6 +36,18 @@ namespace AppleExport
             }
             return a.ToString();
         }
+
+        public static string TelNumberify(this string s)
+        {
+            StringBuilder t = new StringBuilder();
+            foreach (var item in s)
+            {
+                if ((item >= '0' && item <= '9') || item == '+')
+                    t.Append(item);
+            }
+            return t.ToString();
+        }
+
     }
 
     class Program
@@ -146,28 +158,21 @@ namespace AppleExport
                     m_dbConnection.Open();
                     string sql = "select ZADDRESS, ZDATE, ZDURATION, ZORIGINATED from ZCALLRECORD";
                     SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
-                    using (StreamWriter sw = new StreamWriter(pref +  "_call.csv", false, Encoding.UTF8))
+                    using (StreamWriter sw = new StreamWriter(pref + "_call.csv", false, Encoding.UTF8))
                     {
                         sw.WriteLine("Direction,Date,Duration,Address,LastName,FirstName");
                         using (SQLiteDataReader reader = command.ExecuteReader())
                         {
                             while (reader.Read())
                             {
-                                
-                                string address = reader["ZADDRESS"].stringify();
+
+                                string address = reader["ZADDRESS"].Stringify().TelNumberify();
                                 Person p = getPersonFromTel(address);
                                 //Console.WriteLine("Address: {0}\tDate: {1}\tDuration: {2}\tOrigin {3}\tName: {4} {5} \tOrganization: {6} \tDefinite: {7}", address, UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"), reader["ZDURATION"], reader["ZORIGINATED"], p.firstname, p.lastname, p.organization, definite);
                                 sw.WriteLine("{0},{1},{2},{3},{4},{5}",
                                     reader["ZORIGINATED"].ToString() == "1" ? "Outgoing" : "Incoming",
                                     UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"),
-                                    sectotime(int.Parse(reader["ZDURATION"].stringify())),
-                                    address.csv(),
-                                    p.lastname.csv(),
-                                    p.firstname.csv());
-                                Console.WriteLine("{0},{1},{2},{3},{4},{5}",
-                                    reader["ZORIGINATED"].ToString() == "1" ? "Outgoing" : "Incoming",
-                                    UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"),
-                                    sectotime(int.Parse(reader["ZDURATION"].stringify())),
+                                    sectotime(int.Parse(reader["ZDURATION"].Stringify())),
                                     address.csv(),
                                     p.lastname.csv(),
                                     p.firstname.csv());
@@ -190,19 +195,19 @@ namespace AppleExport
                     m_dbConnection.Open();
                     string sql = "select ADDRESS, DATE, DURATION from CALL";
                     SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
-                    using (StreamWriter sw = new StreamWriter(pref+ "_callsort.csv", false, Encoding.UTF8))
+                    using (StreamWriter sw = new StreamWriter(pref + "_callsort.csv", false, Encoding.UTF8))
                     {
                         sw.WriteLine("Date,Duration,Address,LastName,FirstName");
                         using (SQLiteDataReader reader = command.ExecuteReader())
                         {
                             while (reader.Read())
                             {
-                                string address = reader["ADDRESS"].stringify();
+                                string address = reader["ADDRESS"].Stringify().TelNumberify();
                                 Person p = getPersonFromTel(address);
                                 //Console.WriteLine("Address: {0}\tDate: {1}\tDuration: {2}\tOrigin {3}\tName: {4} {5} \tOrganization: {6} \tDefinite: {7}", address, UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"), reader["ZDURATION"], reader["ZORIGINATED"], p.firstname, p.lastname, p.organization, definite);
                                 sw.WriteLine("{0},{1},{2},{3},{4}",
                                     UnixTimeStampToDateTime(reader.GetDouble(1)).ToString("yyyy-MM-dd HH:mm:ss"),
-                                    sectotime(int.Parse(reader["DURATION"].stringify())),
+                                    sectotime(int.Parse(reader["DURATION"].Stringify())),
                                     address.csv(),
                                     p.lastname.csv(),
                                     p.firstname.csv());
@@ -232,16 +237,16 @@ namespace AppleExport
                         {
                             while (reader.Read())
                             {
-                                string address = reader["chat_identifier"].stringify();
+                                string address = reader["chat_identifier"].Stringify().TelNumberify();
                                 Person p = getPersonFromTel(address);
-                                sw.WriteLine("{0},{1},{2},{3},{4},{5},{6}", 
-                                   reader["is_from_me"].stringify() == "1" ? "Outgoing" : "Incoming",
+                                sw.WriteLine("{0},{1},{2},{3},{4},{5},{6}",
+                                   reader["is_from_me"].Stringify() == "1" ? "Outgoing" : "Incoming",
                                    UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"),
-                                   reader["text"].stringify().csv(),
+                                   reader["text"].Stringify().csv(),
                                    address.csv(),
                                    p.lastname.csv(),
                                    p.firstname.csv(),
-                                   reader["service_name"].stringify().csv());
+                                   reader["service_name"].Stringify().csv());
                             }
                         }
                     }
