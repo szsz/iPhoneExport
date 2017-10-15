@@ -112,7 +112,9 @@ namespace AppleExport
         {
             DateTime now = DateTime.Now;
             string pref = max.Name + "_" + now.ToString("yyyy-MM-dd HH.mm.ss");
-            using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + max.FullName + @"\31\31bb7ba8914766d4ba40d6dfb6113c8b614be442"))
+            string fname = max.FullName + @"\31\31bb7ba8914766d4ba40d6dfb6113c8b614be442";
+            Console.WriteLine("Reading" + fname);
+            using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + fname))
             {
                 m_dbConnection.Open();
                 {
@@ -152,10 +154,13 @@ namespace AppleExport
                         }
                     }
                 }
+                Console.WriteLine("sucess" + fname);
             }
             try
             {
-                using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + max.FullName + @"\5a\5a4935c78a5255723f707230a451d79c540d2741"))
+                fname = max.FullName + @"\5a\5a4935c78a5255723f707230a451d79c540d2741";
+                Console.WriteLine("Reading" + fname);
+                using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + fname))
                 {
                     m_dbConnection.Open();
                     string sql = "select ZADDRESS, ZDATE, ZDURATION, ZORIGINATED from ZCALLRECORD";
@@ -181,6 +186,7 @@ namespace AppleExport
                             }
                         }
                     }
+                    Console.WriteLine("sucess" + fname);
                 }
             }
             catch (Exception e)
@@ -192,7 +198,10 @@ namespace AppleExport
 
             try
             {
-                using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + max.FullName + @"\2b\2b2b0084a1bc3a5ac8c27afdf14afb42c61a19ca"))
+
+                fname = max.FullName + @"\5a\5a4935c78a5255723f707230a451d79c540d2741";
+                Console.WriteLine("Reading" + fname);
+                using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + fname))
                 {
                     m_dbConnection.Open();
                     string sql = "select ADDRESS, DATE, DURATION from CALL";
@@ -216,7 +225,12 @@ namespace AppleExport
                             }
                         }
                     }
+
+                    Console.WriteLine("sucess" + fname);
                 }
+
+
+
             }
             catch (Exception e)
             {
@@ -227,7 +241,9 @@ namespace AppleExport
 
             try
             {
-                using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + max.FullName + @"\3d\3d0d7e5fb2ce288813306e4d4636395e047a3d28"))
+                fname = max.FullName + @"\5a\5a4935c78a5255723f707230a451d79c540d2741";
+                Console.WriteLine("Reading" + fname);
+                using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + fname))
                 {
                     m_dbConnection.Open();
                     string sql = "select text, date, chat_identifier, service_name, is_from_me from chat join chat_message_join on chat.ROWID=chat_message_join.chat_id join message on message.ROWID=chat_message_join.message_id";
@@ -242,16 +258,18 @@ namespace AppleExport
                                 string address = reader["chat_identifier"].Stringify().TelNumberify();
                                 Person p = getPersonFromTel(address);
                                 sw.WriteLine("{0},{1},{2},{3},{4},{5},{6}",
-                                   reader["is_from_me"].Stringify() == "1" ? "Outgoing" : "Incoming",
-                                   UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"),
-                                   reader["text"].Stringify().csv(),
-                                   address.csv(),
-                                   p.lastname.csv(),
-                                   p.firstname.csv(),
-                                   reader["service_name"].Stringify().csv());
+                                                                                           reader["is_from_me"].Stringify() == "1" ? "Outgoing" : "Incoming",
+                                                                                           UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"),
+                                                                                           reader["text"].Stringify().csv(),
+                                                                                           address.csv(),
+                                                                                           p.lastname.csv(),
+                                                                                           p.firstname.csv(),
+                                                                                           reader["service_name"].Stringify().csv());
                             }
                         }
                     }
+
+                    Console.WriteLine("sucess" + fname);
                 }
             }
             catch (Exception e)
