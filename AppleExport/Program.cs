@@ -175,11 +175,16 @@ namespace AppleExport
 
                                 string address = reader["ZADDRESS"].Stringify().TelNumberify();
                                 Person p = getPersonFromTel(address);
+                                string orig = reader["ZORIGINATED"].ToString();
+                                string dur = reader["ZDURATION"].Stringify();
+                                dur = sectotime((int)(double.Parse(dur)+0.5));
+                                double tm = reader.GetDouble(1);
+                                string time = UnixTimeStampToDateTime(tm + 978307200).ToString("yyyy-MM-dd HH:mm:ss");
                                 //Console.WriteLine("Address: {0}\tDate: {1}\tDuration: {2}\tOrigin {3}\tName: {4} {5} \tOrganization: {6} \tDefinite: {7}", address, UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"), reader["ZDURATION"], reader["ZORIGINATED"], p.firstname, p.lastname, p.organization, definite);
                                 sw.WriteLine("{0},{1},{2},{3},{4},{5}",
-                                    reader["ZORIGINATED"].ToString() == "1" ? "Outgoing" : "Incoming",
-                                    UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"),
-                                    sectotime(int.Parse(reader["ZDURATION"].Stringify())),
+                                    orig == "1" ? "Outgoing" : "Incoming",
+                                    time,
+                                    dur,
                                     address.csv(),
                                     p.lastname.csv(),
                                     p.firstname.csv());
