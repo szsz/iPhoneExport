@@ -177,7 +177,7 @@ namespace AppleExport
                                 Person p = getPersonFromTel(address);
                                 string orig = reader["ZORIGINATED"].ToString();
                                 string dur = reader["ZDURATION"].Stringify();
-                                dur = sectotime((int)(double.Parse(dur)+0.5));
+                                dur = sectotime((int)(double.Parse(dur) + 0.5));
                                 double tm = reader.GetDouble(1);
                                 string time = UnixTimeStampToDateTime(tm + 978307200).ToString("yyyy-MM-dd HH:mm:ss");
                                 //Console.WriteLine("Address: {0}\tDate: {1}\tDuration: {2}\tOrigin {3}\tName: {4} {5} \tOrganization: {6} \tDefinite: {7}", address, UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"), reader["ZDURATION"], reader["ZORIGINATED"], p.firstname, p.lastname, p.organization, definite);
@@ -251,7 +251,7 @@ namespace AppleExport
                 using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + fname))
                 {
                     m_dbConnection.Open();
-                    string sql = "select text, date, chat_identifier, service_name, is_from_me from chat join chat_message_join on chat.ROWID=chat_message_join.chat_id join message on message.ROWID=chat_message_join.message_id";
+                    string sql = "select text, date_read, chat_identifier, service_name, is_from_me from chat join chat_message_join on chat.ROWID=chat_message_join.chat_id join message on message.ROWID=chat_message_join.message_id";
                     SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
                     using (StreamWriter sw = new StreamWriter(pref + "_sms.csv", false, Encoding.UTF8))
                     {
@@ -262,14 +262,17 @@ namespace AppleExport
                             {
                                 string address = reader["chat_identifier"].Stringify().TelNumberify();
                                 Person p = getPersonFromTel(address);
+                                string dir = reader["is_from_me"].Stringify() == "1" ? "Outgoing" : "Incoming";
+                                string time = UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss");
+                                string serv = reader["service_name"].Stringify().csv();
                                 sw.WriteLine("{0},{1},{2},{3},{4},{5},{6}",
-                                                                                           reader["is_from_me"].Stringify() == "1" ? "Outgoing" : "Incoming",
-                                                                                           UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"),
+                                                                                          dir,
+                                                                                           time,
                                                                                            reader["text"].Stringify().csv(),
                                                                                            address.csv(),
                                                                                            p.lastname.csv(),
                                                                                            p.firstname.csv(),
-                                                                                           reader["service_name"].Stringify().csv());
+                                                                                          serv);
                             }
                         }
                     }
