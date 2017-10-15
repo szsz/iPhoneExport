@@ -199,7 +199,7 @@ namespace AppleExport
             try
             {
 
-                fname = max.FullName + @"\5a\5a4935c78a5255723f707230a451d79c540d2741";
+                fname = max.FullName + @"\2b\2b2b0084a1bc3a5ac8c27afdf14afb42c61a19ca";
                 Console.WriteLine("Reading" + fname);
                 using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + fname))
                 {
@@ -241,7 +241,7 @@ namespace AppleExport
 
             try
             {
-                fname = max.FullName + @"\5a\5a4935c78a5255723f707230a451d79c540d2741";
+                fname = max.FullName + @"\3d\3d0d7e5fb2ce288813306e4d4636395e047a3d28";
                 Console.WriteLine("Reading" + fname);
                 using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + fname))
                 {
