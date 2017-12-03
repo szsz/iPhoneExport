@@ -200,49 +200,7 @@ namespace AppleExport
                 if (e.InnerException != null)
                     Console.WriteLine(e.InnerException);
             }
-
-            try
-            {
-
-                fname = max.FullName + @"\2b\2b2b0084a1bc3a5ac8c27afdf14afb42c61a19ca";
-                Console.WriteLine("Reading" + fname);
-                using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + fname))
-                {
-                    m_dbConnection.Open();
-                    string sql = "select ADDRESS, DATE, DURATION from CALL";
-                    SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
-                    using (StreamWriter sw = new StreamWriter(pref + "_callsort.csv", false, Encoding.UTF8))
-                    {
-                        sw.WriteLine("Date,Duration,Address,LastName,FirstName");
-                        using (SQLiteDataReader reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                string address = reader["ADDRESS"].Stringify().TelNumberify();
-                                Person p = getPersonFromTel(address);
-                                //Console.WriteLine("Address: {0}\tDate: {1}\tDuration: {2}\tOrigin {3}\tName: {4} {5} \tOrganization: {6} \tDefinite: {7}", address, UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss"), reader["ZDURATION"], reader["ZORIGINATED"], p.firstname, p.lastname, p.organization, definite);
-                                sw.WriteLine("{0},{1},{2},{3},{4}",
-                                    UnixTimeStampToDateTime(reader.GetDouble(1)).ToString("yyyy-MM-dd HH:mm:ss"),
-                                    sectotime(int.Parse(reader["DURATION"].Stringify())),
-                                    address.csv(),
-                                    p.lastname.csv(),
-                                    p.firstname.csv());
-                            }
-                        }
-                    }
-
-                    Console.WriteLine("sucess" + fname);
-                }
-
-
-
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                if (e.InnerException != null)
-                    Console.WriteLine(e.InnerException);
-            }
+            
 
             try
             {
@@ -251,7 +209,7 @@ namespace AppleExport
                 using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + fname))
                 {
                     m_dbConnection.Open();
-                    string sql = "select text, date_read, chat_identifier, service_name, is_from_me from chat join chat_message_join on chat.ROWID=chat_message_join.chat_id join message on message.ROWID=chat_message_join.message_id";
+                    string sql = "select text, [date], chat_identifier, service_name, is_from_me from chat join chat_message_join on chat.ROWID=chat_message_join.chat_id join message on message.ROWID=chat_message_join.message_id";
                     SQLiteCommand command = new SQLiteCommand(sql, m_dbConnection);
                     using (StreamWriter sw = new StreamWriter(pref + "_sms.csv", false, Encoding.UTF8))
                     {
@@ -260,19 +218,30 @@ namespace AppleExport
                         {
                             while (reader.Read())
                             {
-                                string address = reader["chat_identifier"].Stringify().TelNumberify();
-                                Person p = getPersonFromTel(address);
-                                string dir = reader["is_from_me"].Stringify() == "1" ? "Outgoing" : "Incoming";
-                                string time = UnixTimeStampToDateTime(reader.GetDouble(1) + 978307200).ToString("yyyy-MM-dd HH:mm:ss");
-                                string serv = reader["service_name"].Stringify().csv();
-                                sw.WriteLine("{0},{1},{2},{3},{4},{5},{6}",
-                                                                                          dir,
-                                                                                           time,
-                                                                                           reader["text"].Stringify().csv(),
-                                                                                           address.csv(),
-                                                                                           p.lastname.csv(),
-                                                                                           p.firstname.csv(),
-                                                                                          serv);
+                                try
+                                {
+                                    string address = reader["chat_identifier"].Stringify().TelNumberify();
+                                    Person p = getPersonFromTel(address);
+                                    string dir = reader["is_from_me"].Stringify() == "1" ? "Outgoing" : "Incoming";
+                                    long dt = reader.GetInt64(1);
+                                    dt/=1000*1000*1000;
+                                    System.DateTime dtDateTime = new DateTime(2001, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+                                    dtDateTime = dtDateTime.AddSeconds(dt).ToLocalTime();
+                                    string time = dtDateTime.ToString("yyyy-MM-dd HH:mm:ss");
+                                    string serv = reader["service_name"].Stringify().csv();
+                                    sw.WriteLine("{0},{1},{2},{3},{4},{5},{6}",
+                                                                                              dir,
+                                                                                               time,
+                                                                                               reader["text"].Stringify().csv(),
+                                                                                               address.csv(),
+                                                                                               p.lastname.csv(),
+                                                                                               p.firstname.csv(),
+                                                                                              serv);
+                                }
+                                catch
+                                {
+                                    Console.WriteLine("Missed one sms");
+                                }
                             }
                         }
                     }
