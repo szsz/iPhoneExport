@@ -158,7 +158,49 @@ namespace AppleExport
             }
             try
             {
-                fname = max.FullName + @"\5a\5a4935c78a5255723f707230a451d79c540d2741";
+                fname = max.FullName + @"\6b\6b97989189901ceaa4e5be9b7f05fb584120e27b";
+                PList.PListRoot v = PList.PListRoot.Load(fname);
+                using (StreamWriter sw = new StreamWriter(pref + "_call2.csv", false, Encoding.UTF8))
+                {
+                    sw.WriteLine("Type,Address,Date,LastName,FirstName,Status,ValidExpriry");
+
+                    Type t = v.Root.GetType();
+                    PList.PListDict a = (PList.PListDict)v.Root;
+                    foreach (var ib in a)
+                    {
+                        Type tb = ib.Value.GetType();
+                        if (tb == t)
+                        {
+                            PList.PListDict b = (PList.PListDict)ib.Value;
+                            foreach (var ic in b)
+                            {
+                                Type tc = ic.Value.GetType();
+                                if (tc == t)
+                                {
+                                    PList.PListDict c = (PList.PListDict)ic.Value;
+
+                                    Person p = getPersonFromTel(ic.Key);
+                                    string date = c.ContainsKey("LookupDate") ? UnixTimeStampToDateTime(((PList.PListReal)c["LookupDate"]).Value + 978307200).ToString("yyyy-MM-dd HH:mm:ss") : "";
+                                    string status = c.ContainsKey("IDStatus") ? ((PList.PListInteger)c["IDStatus"]).Value.ToString() : "";
+                                    string validexp = c.ContainsKey("ValidExpiry") ? ((PList.PListReal)c["ValidExpiry"]).Value.ToString() : "";
+                                    sw.WriteLine("{0},{1},{2},{3},{4},{5},{6}", ib.Key, ic.Key, date, p.lastname, p.firstname, status, validexp);
+                                }
+                                else
+                                {
+
+                                }
+                            }
+                        }
+                        else
+                        {
+
+                        }
+                    }
+
+                }
+
+
+                /*fname = max.FullName + @"\5a\5a4935c78a5255723f707230a451d79c540d2741";
                 Console.WriteLine("Reading" + fname);
                 using (var m_dbConnection = new SQLiteConnection(@"Data Source=" + fname))
                 {
@@ -191,8 +233,8 @@ namespace AppleExport
                             }
                         }
                     }
-                    Console.WriteLine("sucess" + fname);
-                }
+                }*/
+                Console.WriteLine("sucess" + fname);
             }
             catch (Exception e)
             {
@@ -200,7 +242,7 @@ namespace AppleExport
                 if (e.InnerException != null)
                     Console.WriteLine(e.InnerException);
             }
-            
+
 
             try
             {
@@ -224,7 +266,7 @@ namespace AppleExport
                                     Person p = getPersonFromTel(address);
                                     string dir = reader["is_from_me"].Stringify() == "1" ? "Outgoing" : "Incoming";
                                     long dt = reader.GetInt64(1);
-                                    dt/=1000*1000*1000;
+                                    dt /= 1000 * 1000 * 1000;
                                     System.DateTime dtDateTime = new DateTime(2001, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
                                     dtDateTime = dtDateTime.AddSeconds(dt).ToLocalTime();
                                     string time = dtDateTime.ToString("yyyy-MM-dd HH:mm:ss");
